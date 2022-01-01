@@ -1,0 +1,22 @@
+#!/bin/sh
+# shellcheck disable=SC2059
+
+# ------------------------------------------------------------------------------
+# ❯_ git prompt installer
+# (C)opyright 2022 by Daniel Dietrich - MIT license
+# ------------------------------------------------------------------------------
+
+if [ -f ~/.gitprompt ]; then
+  echo "Git prompt already installed."
+else
+  echo "Installing git prompt..."
+  if curl -sL https://gitprompt.sh > ~/.gitprompt; then
+    SOURCE_GITPROMPT="\n\n. ~/.gitprompt &>/dev/null\n"
+    printf "$SOURCE_GITPROMPT" >> ~/.zshrc
+    printf "$SOURCE_GITPROMPT" >> ~/.bashrc
+    printf "$SOURCE_GITPROMPT" >> ~/.bash_profile
+    echo "Done!"
+  else
+    echo "Failed to install git prompt."
+  fi
+fi
