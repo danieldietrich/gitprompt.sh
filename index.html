@@ -1,0 +1,59 @@
+#!/bin/bash -n
+# <html hidden><head><meta http-equiv="refresh" content="0;url=https://gitprompt.sh/page.html"></head></html>
+# shellcheck disable=SC2155
+
+# ------------------------------------------------------------------------------
+# ❯_ git prompt
+# (C)opyright 2022 by Daniel Dietrich - MIT license
+# ------------------------------------------------------------------------------
+# GP_COLOR_GIT_BRANCH="38;5;8"
+# GP_COLOR_GIT_STATUS="38;5;9"
+# GP_COLOR_GIT_UNPUSHED="38;5;11"
+# GP_COLOR_PWD_DARK="1;38;5;24"
+# GP_COLOR_PWD_LIGHT="1;38;5;39"
+# GP_COLOR_PROMPT="38;5;49"
+# GP_COLOR_CLOCK="38;5;99"
+# ------------------------------------------------------------------------------
+
+__gp_color() {
+  [ -n "$ZSH_VERSION" ] && echo -e "%{\e[$1m%}" || echo -e "\001\033[$1m\002"
+}
+
+__gp_status() {
+  local COLOR_BRANCH=$(__gp_color "${GP_COLOR_GIT_BRANCH:-38;5;8}")
+  local COLOR_STATUS=$(__gp_color "${GP_COLOR_GIT_STATUS:-38;5;9}")
+  local COLOR_UNPUSHED=$(__gp_color "${GP_COLOR_GIT_UNPUSHED:-38;5;11}")
+  local COLOR_RESET=$(__gp_color 0)
+  local dir=${1:-.} branch unpushed state
+  if branch=$(git -C "$dir" symbolic-ref --short -q HEAD 2>/dev/null); then
+    if git -C "$dir" rev-parse 2>/dev/null; then
+      if ! unpushed=$(set -o pipefail; git -C "$dir" log origin/"$branch"..HEAD -- 2>/dev/null | head -c1 | if [ "$(wc -c)" -gt "0" ]; then echo "↑"; fi); then
+        unpushed="•"
+      fi
+      state=$(set -o pipefail; git -C "$dir" status --porcelain 2>/dev/null | head -c1 | if [ "$(wc -c)" -gt "0" ]; then echo "✗"; fi)
+    fi
+    printf "%s⎇ %s%s%s%s%s%s" "${COLOR_BRANCH}" "${branch}" "${COLOR_STATUS}" "${state}" "${COLOR_UNPUSHED}" "${unpushed}" "${COLOR_RESET}"
+  fi
+}
+
+__gp_pwd() {
+  local COLOR_DARK=$(__gp_color "${GP_COLOR_PWD_DARK:-1;38;5;24}")
+  local COLOR_LIGHT=$(__gp_color "${GP_COLOR_PWD_LIGHT:-1;38;5;39}")
+  local COLOR_RESET=$(__gp_color 0)
+  local pwd="${PWD/#$HOME/~}" dir prefix suffix
+  dir=$(dirname "$pwd" 2>/dev/null)
+  prefix=$(if [[ "$dir" == '.' ]] || [[ -z "$dir" ]]; then echo ''; elif [[ "$dir" == '/' ]]; then echo '/'; else echo "$dir/"; fi)
+  dir=$(basename "$pwd" 2>/dev/null)
+  suffix=$(if [[ "$dir" == '/' ]]; then echo ''; else echo "$dir"; fi)
+  printf "%s%s%s%s%s" "${COLOR_DARK}" "${prefix/#\~/${COLOR_LIGHT}~${COLOR_DARK}}" "${COLOR_LIGHT}" "${suffix}" "${COLOR_RESET}"
+}
+
+export TERM=xterm-256color
+
+if [ -n "$ZSH_VERSION" ]; then
+  setopt PROMPT_SUBST
+  export PROMPT="%\$((\$COLUMNS / 2))<…<\$(__gp_pwd)\$(__gp_status)\$(__gp_color \${GP_COLOR_PROMPT:-38;5;49}) ❯$(__gp_color 0) "
+  export RPROMPT="\$(__gp_color \${GP_COLOR_CLOCK:-38;5;99})%@$(__gp_color 0)"
+else
+  export PS1="\$(__gp_pwd)\$(__gp_status)\$(__gp_color \${GP_COLOR_PROMPT:-38;5;49}) ❯$(__gp_color 0) "
+fi
