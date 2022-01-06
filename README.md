@@ -1,5 +1,7 @@
 # ❯_ git prompt
 
+![terminal](./docs/img/terminal.png)
+
 Use git prompt **ad-hoc** by sourcing the script:
 
 ```sh
