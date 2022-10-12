@@ -1,0 +1,69 @@
+#!/bin/bash
+
+# shellcheck disable=SC1091 disable=SC2034 disable=SC2155
+
+. ../docs/index.html
+
+GP_COLORS=""
+ERROR=""
+
+__test_gp_status() {
+    local expected=$1
+    local dir=$2
+    local git_status_sb=$3
+    local dirty=$4
+    local actual=$(__gp_status "$dir" "$git_status_sb" "$dirty")
+    if [[ "$actual" != "$expected" ]]; then
+        echo "ERROR: expected '$expected' but was '$actual'"
+        ERROR=true
+    fi
+}
+
+# detached HEAD (git checkout <commit-hash>)
+__test_gp_status "⎇ HEAD (no branch)" "." "## HEAD (no branch)"
+__test_gp_status "⎇ HEAD (no branch)✗1" "." "## HEAD (no branch)
+?? x"
+
+# fresh repo (git init)
+__test_gp_status "⎇ main" "." "## No commits yet on main"
+__test_gp_status "⎇ main✗1" "." "## No commits yet on main
+?? x"
+
+# first commit, upstream branch (git add . ; git commit -m "first commit")
+__test_gp_status "⎇ main" "." "## main"
+__test_gp_status "⎇ main✗1" "." "## main
+?? x"
+
+# unpushed changes without remote
+__test_gp_status "⎇ main↑1" "." "## main [ahead 1]"
+__test_gp_status "⎇ main✗1↑1" "." "## main [ahead 1]
+?? x"
+
+# TODO(@@dd): incoming changes without remote?
+__test_gp_status "⎇ main↓1" "." "## main [behind 1]"
+__test_gp_status "⎇ main✗1↓1" "." "## main [behind 1]
+?? x"
+
+# TODO(@@dd): merge conflict without remote?
+__test_gp_status "⎇ main↑1↓1" "." "## main [ahead 1, behind 1]"
+__test_gp_status "⎇ main✗1↑1↓1" "." "## main [ahead 1, behind 1]
+?? x"
+
+# unpushed changes to remote
+__test_gp_status "⎇ main → origin/main↑1" "." "## main...origin/main [ahead 1]"
+__test_gp_status "⎇ main → origin/main✗1↑1" "." "## main...origin/main [ahead 1]
+?? x"
+
+# merge conflict with remote
+__test_gp_status "⎇ main → origin/main↑1↓1" "." "## main...origin/main [ahead 1, behind 1]"
+__test_gp_status "⎇ main → origin/main✗1↑1↓1" "." "## main...origin/main [ahead 1, behind 1]
+?? x"
+
+# incoming changes from remote
+__test_gp_status "⎇ main → origin/main↓1" "." "## main...origin/main [behind 1]"
+__test_gp_status "⎇ main → origin/main✗1↓1" "." "## main...origin/main [behind 1]
+?? x"
+
+if [ -n "$ERROR" ]; then
+  exit 1
+fi

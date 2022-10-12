@@ -1,0 +1,25 @@
+#!/bin/sh
+# ------------------------------------------------------------------------------
+# (C)opyright 2022 by Daniel Dietrich - MIT license
+# ------------------------------------------------------------------------------
+
+# shellcheck disable=SC2059 disable=SC1090 disable=SC2088
+
+echo "Installing gitprompt..."
+
+gitprompt="$HOME/.gitprompt"
+
+if [ -f "$gitprompt" ]; then
+  echo "$gitprompt found, skipping installation"
+else
+  if curl -sL https://gitprompt.sh > "$gitprompt"; then
+    SOURCE_GITPROMPT="\n\n. ~/.gitprompt &>/dev/null\n"
+    printf "$SOURCE_GITPROMPT" >> ~/.zshrc
+    printf "$SOURCE_GITPROMPT" >> ~/.bashrc
+    printf "$SOURCE_GITPROMPT" >> ~/.bash_profile
+    echo "Installed $gitprompt"
+  else
+    echo "Failed to install $gitprompt"
+    exit 1
+  fi
+fi
