@@ -58,12 +58,12 @@ __gp_status() {
   local dir=${1:-.} git_status branch_info branch changes state remote ahead behind unpushed
 
   __parse() (
-    echo -n "$(set -o pipefail; sed -rn "$1" <<< "$branch_info")"
+    echo -n "$(sed -rn "$1" <<< "$branch_info")"
   )
 
   # first line: branch, remote, ahead, behind
   # subsequent lines: local changes
-  if ! git_status=${2:-"$(set -o pipefail; git status -sb 2>/dev/null)"}; then
+  if ! git_status=${2:-"$(git status -sb 2>/dev/null)"}; then
     return 0
   fi
   branch_info=$(head -n 1 <<< "$git_status")
