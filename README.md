@@ -19,8 +19,9 @@ A beautiful git prompt for zsh and bash.
 | Szenario  |               Command             |                     Description                   |
 | --------- | --------------------------------- | ------------------------------------------------- |
 | ad-hoc    | `. <(curl gitprompt.sh)`          | Use **gitprompt** in the current terminal session |
-| permanent | `curl gitprompt.sh/install \| sh` | Install **gitprompt** in your home directory      |
-| [dotfiles](https://www.gitpod.io/docs/configure/user-settings/dotfiles) | `https://github.com/danieldietrich/dotfiles` | Personalize your Gitpod workspace environments |
+| permanent | `curl gitprompt.sh/install \| sh` | Install **gitprompt** in your home directory and alter the PATH. |
+| manual    | `curl -sL https://gitprompt.sh > "$HOME/.gitprompt"` | Download **gitprompt** to your home directory. Load it by running `. ~/.gitprompt &>/dev/null` |
+| dotfiles | `https://github.com/danieldietrich/dotfiles` | Personalize your [Gitpod](https://www.gitpod.io/docs/configure/user-settings/dotfiles) and [GitHub Codepaces](https://docs.github.com/en/codespaces/setting-your-user-preferences/personalizing-github-codespaces-for-your-account#dotfiles) environments |
 
 ## Customization
 
