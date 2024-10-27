@@ -4,15 +4,13 @@
 
 A beautiful git prompt for zsh and bash.
 
-![terminal](./docs/img/terminal.png)
+![terminal](./docs/img/terminal.webp)
 
 ## Features
 
 * 256 colors support
 * Show current directory
 * Show git branch, status and push state
-* Show current time at the right side (zsh only)
-* Automatic PROMPT refresh on git changes and time (every second, zsh only)
 
 ## Usage
 
@@ -35,11 +33,3 @@ ENV variables can be set in your `.bashrc` or `.zshrc` file.
 | `GP_COLOR_GIT_UNPUSHED` | `"38;5;11"`    | Unpushed state color           |
 | `GP_COLOR_PWD_DARK`     | `"1;38;5;24"`  | Directory color dark           |
 | `GP_COLOR_PWD_LIGHT`    | `"1;38;5;39"`  | Directory color light          |
-
-These variables only apply to the zsh version.
-
-|         ENV var         |     Default    |           Description          |
-| ----------------------- | -------------- | ------------------------------ |
-| `GP_COLOR_CLOCK`        | `"38;5;99"`    | Clock color                    |
-| `GP_COLORS`             | `true`         | Enable colors                  |
-| `GP_UPDATE_PROMPT`      | `true`         | Enables/disables PROMPT update |

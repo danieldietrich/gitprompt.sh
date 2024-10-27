@@ -25,26 +25,16 @@
 # | GP_COLOR_GIT_UNPUSHED | "38;5;11"    | Unpushed state color                |
 # | GP_COLOR_PWD_DARK     | "1;38;5;24"  | Directory color dark                |
 # | GP_COLOR_PWD_LIGHT    | "1;38;5;39"  | Directory color light               |
-# 
-# These variables only apply to the zsh version.
-# 
-# |        ENV var        |    Default   |             Description             |
-# | --------------------- | ------------ | ----------------------------------- |
-# | GP_COLOR_CLOCK        | "38;5;99"    | Clock color                         |
-# | GP_COLORS             | true         | Enable colors                       |
-# | GP_UPDATE_PROMPT      | true         | Enables/disables PROMPT update      |
 #     
 # ------------------------------------------------------------------------------
 
 # shellcheck disable=SC2154 disable=SC2155 disable=SC2296 disable=SC2301
 
 __gp_color() {
-  if [ -n "$GP_COLORS" ]; then
-    if [ -n "$ZSH_VERSION" ]; then
-      echo -ne "%{\e[$1m%}"
-    else
-      echo -ne "\001\033[$1m\002"
-    fi
+  if [ -n "$ZSH_VERSION" ]; then
+    echo -ne "%{\e[$1m%}"
+  else
+    echo -ne "\001\033[$1m\002"
   fi
 }
 
@@ -106,29 +96,11 @@ __gp_pwd() {
   printf "%s%s%s%s%s" "${COLOR_DARK}" "${prefix/#\~/${COLOR_LIGHT}~${COLOR_DARK}}" "${COLOR_LIGHT}" "${suffix}" "${COLOR_RESET}"
 }
 
-__update_prompt() {
-  emulate -L zsh
-  zmodload -i zsh/sched
-
-  integer i=${"${(@)zsh_scheduled_events#*:*:}"[(I)schedprompt]}
-  (( i )) && sched -"$i"
-
-  if [ -n "$GP_UPDATE_PROMPT" ]; then
-    zle && zle reset-prompt
-  fi
-
-  sched +1  __update_prompt
-}
-
 export TERM=xterm-256color
-
-GP_COLORS=true
 
 if [ -n "$ZSH_VERSION" ]; then
   setopt PROMPT_SUBST
   export PROMPT="%\$((\$COLUMNS / 2))<…<\$(__gp_pwd)\$(__gp_status)\$(__gp_color \${GP_COLOR_PROMPT:-38;5;49}) ❯$(__gp_color 0) "
-  export RPROMPT="\$(__gp_color \${GP_COLOR_CLOCK:-38;5;99})%D{%K:%M:%S}$(__gp_color 0)"
-  GP_UPDATE_PROMPT=true ; __update_prompt
 else
   export PS1="\$(__gp_pwd)\$(__gp_status)\$(__gp_color \${GP_COLOR_PROMPT:-38;5;49}) ❯$(__gp_color 0) "
 fi
