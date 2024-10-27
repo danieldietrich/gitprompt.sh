@@ -40,7 +40,11 @@
 
 __gp_color() {
   if [ -n "$GP_COLORS" ]; then
-    [ -n "$ZSH_VERSION" ] && echo -ne "%{\e[$1m%}" || echo -ne "\001\033[$1m\002"
+    if [ -n "$ZSH_VERSION" ]; then
+      echo -ne "%{\e[$1m%}"
+    else
+      echo -ne "\001\033[$1m\002"
+    fi
   fi
 }
 
