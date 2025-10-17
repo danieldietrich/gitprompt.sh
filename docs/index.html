@@ -1,6 +1,6 @@
 #!/bin/bash -n
 # ------------------------------------------------------------------------------
-# (C)opyright 2022 by Daniel Dietrich - MIT license
+# (C)opyright 2025 by Daniel Dietrich - MIT license
 # ------------------------------------------------------------------------------
 
 # <html hidden><script>location.href="/page.html"</script></html>
@@ -81,7 +81,7 @@ __gp_status() {
     [ -n "$behind" ] && echo -n "↓$behind";
   )
 
-  printf "%s⎇ %s%s%s%s%s%s" "${COLOR_BRANCH}" "${branch}$([ -n "$remote" ] && echo -n " → $remote")" "${COLOR_STATUS}" "${state}" "${COLOR_UNPUSHED}" "${unpushed}" "${COLOR_RESET}"
+  printf "%s⎇ %s%s%s%s" "${COLOR_BRANCH}" "${branch}$([ -n "$remote" ] && echo -n " → $remote")" "${COLOR_STATUS}${state}" "${COLOR_UNPUSHED}${unpushed}$([ -z "$remote" ] && echo -n "*")" "${COLOR_RESET}"
 }
 
 __gp_pwd() {
