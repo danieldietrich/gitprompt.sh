@@ -23,8 +23,10 @@
 # | GP_COLOR_GIT_BRANCH   | "38;5;8"     | Branch color                        |
 # | GP_COLOR_GIT_STATUS   | "38;5;9"     | Dirty state color                   |
 # | GP_COLOR_GIT_UNPUSHED | "38;5;11"    | Unpushed state color                |
+# | GP_COLOR_GIT_USER     | "38;5;38"    | Current user color                  |
 # | GP_COLOR_PWD_DARK     | "1;38;5;24"  | Directory color dark                |
 # | GP_COLOR_PWD_LIGHT    | "1;38;5;39"  | Directory color light               |
+# | GP_USER               | (unset)      | When set displays git user.email    |
 #     
 # ------------------------------------------------------------------------------
 
@@ -47,9 +49,10 @@ __gp_status() {
   local COLOR_BRANCH=$(__gp_color "${GP_COLOR_GIT_BRANCH:-38;5;8}")
   local COLOR_STATUS=$(__gp_color "${GP_COLOR_GIT_STATUS:-38;5;9}")
   local COLOR_UNPUSHED=$(__gp_color "${GP_COLOR_GIT_UNPUSHED:-38;5;11}")
+  local COLOR_USER=$(__gp_color "${GP_COLOR_GIT_USER:-38;5;38}")
   local COLOR_RESET=$(__gp_color 0)
 
-  local dir=${1:-.} git_status branch_info branch changes state remote ahead behind unpushed
+  local dir=${1:-.} git_status branch_info branch changes state remote ahead behind unpushed user branch_display state_display unpushed_display user_display
 
   __parse() (
     echo -n "$(sed -rn "$1" <<< "$branch_info")"
@@ -79,9 +82,19 @@ __gp_status() {
   unpushed=$(
     [ -n "$ahead" ] && echo -n "↑$ahead";
     [ -n "$behind" ] && echo -n "↓$behind";
+    [ -z "$remote" ] && echo -n "*"
   )
 
-  printf "%s⎇ %s%s%s%s" "${COLOR_BRANCH}" "${branch}$([ -n "$remote" ] && echo -n " → $remote")" "${COLOR_STATUS}${state}" "${COLOR_UNPUSHED}${unpushed}$([ -z "$remote" ] && echo -n "*")" "${COLOR_RESET}"
+  # parse user.name
+  if [ -n "$GP_USER" ]; then
+    user=$(git config user.email)
+  fi
+
+  branch_display="${COLOR_BRANCH}⎇ ${branch}$(if [ -n "$remote" ]; then echo -n " → $remote"; fi)"
+  state_display="${COLOR_STATUS}${state}"
+  unpushed_display="${COLOR_UNPUSHED}${unpushed}"
+  user_display="${COLOR_USER}$(if [ -n "$GP_USER" ]; then echo -n " $user"; fi)"
+  printf "%s%s%s%s%s" "$branch_display" "$state_display" "$unpushed_display" "$user_display" "${COLOR_RESET}"
 }
 
 __gp_pwd() {
