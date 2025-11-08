@@ -4,8 +4,6 @@
 
 A beautiful git prompt for zsh and bash.
 
-![terminal](./docs/img/terminal.webp)
-
 ## Features
 
 * 256 colors support
