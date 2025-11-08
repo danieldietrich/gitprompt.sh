@@ -1,36 +1,41 @@
 #!/bin/bash -n
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # (C)opyright 2025 by Daniel Dietrich - MIT license
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 # <html hidden><script>location.href="/page.html"</script></html>
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 #
 # Usage:
 #
-# |               Command                      |          Description          |
-# | ------------------------------------------ | ----------------------------- |
-# | . <(curl gitprompt.sh)                     | Use gitprompt in Active shell |
-# | curl gitprompt.sh/install | sh             | Install gitprompt to $HOME    |
-# | https://github.com/danieldietrich/dotfiles | Gitpod dotfiles               |
+# |               Command                       |          Description           |
+# | ------------------------------------------- | ------------------------------ |
+# | . <(curl gitprompt.sh)                      | Use gitprompt in Active shell  |
+# | curl gitprompt.sh/install | sh              | Install gitprompt to $HOME     |
 # 
 # Customize gitprompt by placing ENV vars in your .bashrc or .zshrc file.
 #
-# |         ENV var       |    Default   |             Description             |
-# | --------------------- | ------------ | ----------------------------------- |
-# | GP_COLOR_PROMPT       | "38;5;49"    | Prompt color                        |
-# | GP_COLOR_GIT_BRANCH   | "38;5;8"     | Branch color                        |
-# | GP_COLOR_GIT_STATUS   | "38;5;9"     | Dirty state color                   |
-# | GP_COLOR_GIT_UNPUSHED | "38;5;11"    | Unpushed state color                |
-# | GP_COLOR_GIT_USER     | "38;5;38"    | Current user color                  |
-# | GP_COLOR_PWD_DARK     | "1;38;5;24"  | Directory color dark                |
-# | GP_COLOR_PWD_LIGHT    | "1;38;5;39"  | Directory color light               |
-# | GP_USER               | (unset)      | When set displays git user.email    |
+# |         ENV var         |    Default   |             Description             |
+# | ----------------------- | ------------ | ----------------------------------- |
+# | GP_COLOR_GIT_BRANCH     | "38;5;8"     | Branch color                        |
+# | GP_COLOR_GIT_REPOSITORY | "38;5;7"     | Repository color                    |
+# | GP_COLOR_GIT_STATUS     | "38;5;209"   | Dirty state color                   |
+# | GP_COLOR_GIT_UNPUSHED   | "38;5;221"   | Unpushed state color                |
+# | GP_COLOR_GIT_UNTRACKED  | "38;5;197"   | Untracked file color                |
+# | GP_COLOR_GIT_USER       | "38;5;21"    | Current user color                  |
+# |                         |              |                                     |
+# | GP_COLOR_PROMPT         | "38;5;49"    | Prompt color                        |
+# | GP_COLOR_PWD_DARK       | "1;38;5;24"  | Directory color dark                |
+# | GP_COLOR_PWD_LIGHT      | "1;38;5;39"  | Directory color light               |
+# |                         |              |                                     |
+# | GP_PROMPT_SYMBOL        | "❯"          | Prompt symbol                       |
+# | GP_SEPARATOR            | " "          | Separator between git parts         |
+# | GP_USER                 | (unset)      | When set displays git user.email    |
 #     
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
-# shellcheck disable=SC2154 disable=SC2155 disable=SC2296 disable=SC2301
+# shellcheck disable=SC2155
 
 __gp_color() {
   if [ -n "$ZSH_VERSION" ]; then
@@ -40,19 +45,29 @@ __gp_color() {
   fi
 }
 
-# param 1: dir
-# param 2 (test only): output of git status -sb
-# param 3 (test only): non-empty for dirty state
 __gp_status() {
 
-  # colors
+  # preferences
   local COLOR_BRANCH=$(__gp_color "${GP_COLOR_GIT_BRANCH:-38;5;8}")
-  local COLOR_STATUS=$(__gp_color "${GP_COLOR_GIT_STATUS:-38;5;9}")
-  local COLOR_UNPUSHED=$(__gp_color "${GP_COLOR_GIT_UNPUSHED:-38;5;11}")
-  local COLOR_USER=$(__gp_color "${GP_COLOR_GIT_USER:-38;5;38}")
+  local COLOR_REPOSITORY=$(__gp_color "${GP_COLOR_GIT_REPOSITORY:-38;5;7}")
+  local COLOR_STATUS=$(__gp_color "${GP_COLOR_GIT_STATUS:-38;5;209}")
+  local COLOR_UNPUSHED=$(__gp_color "${GP_COLOR_GIT_UNPUSHED:-38;5;221}")
+  local COLOR_UNTRACKED=$(__gp_color "${GP_COLOR_GIT_UNTRACKED:-38;5;197}")
+  local COLOR_USER=$(__gp_color "${GP_COLOR_GIT_USER:-38;5;21}")
   local COLOR_RESET=$(__gp_color 0)
+  local SEPARATOR=${GP_SEPARATOR-" "} # default " " if unset OR empty
 
-  local dir=${1:-.} git_status branch_info branch changes state remote ahead behind unpushed user branch_display state_display unpushed_display user_display
+  # variables
+  local git_status branch_info
+  local state_display untracked changes untracked_state dirty_state
+  local branch_display branch
+  local unpushed_display remote ahead behind unpushed
+  local repository_display repository
+  local user_display user
+
+  __append() {
+    echo -n "${SEPARATOR}${1}"
+  }
 
   __parse() (
     echo -n "$(sed -rn "$1" <<< "$branch_info")"
@@ -64,10 +79,12 @@ __gp_status() {
     return 0
   fi
   branch_info=$(head -n 1 <<< "$git_status")
-  changes=$(echo "$git_status" | tail -n +2 | wc -l | xargs) # xargs trims spaces
-
+  
   # parse state
-  [ "$changes" -gt 0 ] && state="✗$changes"
+  untracked=$(echo "$git_status" | tail -n +2 | grep -c "^??")
+  changes=$(echo "$git_status" | tail -n +2 | grep -c -v "^??")
+  untracked_state=$([ "$untracked" -gt 0 ] && __append "?$untracked")
+  dirty_state=$([ "$changes" -gt 0 ] && __append "±$changes")
 
   # parse branch
   branch=$(__parse "s/^## (HEAD \(no branch\))$/\1/p")
@@ -80,40 +97,66 @@ __gp_status() {
   ahead=$(__parse "s/^## .* \[.*ahead ([0-9]*).*$/\1/p")
   behind=$(__parse "s/^## .* \[.*behind ([0-9]*).*$/\1/p")
   unpushed=$(
-    [ -n "$ahead" ] && echo -n "↑$ahead";
-    [ -n "$behind" ] && echo -n "↓$behind";
-    [ -z "$remote" ] && echo -n "*"
+    [ -z "$remote" ] && __append "[local]";
+    [ -n "$ahead" ] && __append "↑$ahead";
+    [ -n "$behind" ] && __append "↓$behind";
   )
 
-  # parse user.name
-  if [ -n "$GP_USER" ]; then
-    user=$(git config user.email)
-  fi
+  # parse repository name
+  repository=$(git remote get-url origin | sed 's/.*\///' | sed 's/\.git$//')
+  repository=${repository:-$(git rev-parse --show-toplevel | xargs basename)}
 
+  # parse user.name
+  user=$([ -n "$GP_USER" ] && git config user.email)
+
+  # create display strings
   branch_display="${COLOR_BRANCH}⎇ ${branch}$(if [ -n "$remote" ]; then echo -n " → $remote"; fi)"
-  state_display="${COLOR_STATUS}${state}"
+  state_display="${COLOR_STATUS}${dirty_state}${COLOR_UNTRACKED}${untracked_state}"
   unpushed_display="${COLOR_UNPUSHED}${unpushed}"
-  user_display="${COLOR_USER}$(if [ -n "$GP_USER" ]; then echo -n " $user"; fi)"
-  printf "%s%s%s%s%s" "$branch_display" "$state_display" "$unpushed_display" "$user_display" "${COLOR_RESET}"
+  repository_display="${COLOR_REPOSITORY}${repository}$(__append "${branch_display}")"
+  user_display="${COLOR_USER}$(if [ -n "$user" ]; then __append "$user"; fi)"
+
+  # combine results, substitution after newline necessary because of trimming
+  printf "%s\n%s" "${repository_display}${unpushed_display}${state_display}${user_display}" "${COLOR_RESET}"
 }
 
 __gp_pwd() {
+
+  # preferences
   local COLOR_DARK=$(__gp_color "${GP_COLOR_PWD_DARK:-1;38;5;24}")
   local COLOR_LIGHT=$(__gp_color "${GP_COLOR_PWD_LIGHT:-1;38;5;39}")
   local COLOR_RESET=$(__gp_color 0)
-  local pwd="${PWD/#$HOME/~}" dir prefix suffix
+
+  # variables
+  local pwd="${PWD/#$HOME/~}"
+  local dir prefix suffix
+
+  # computing directory components
   dir=$(dirname "$pwd" 2>/dev/null)
   prefix=$(if [[ "$dir" == "." ]] || [[ -z "$dir" ]]; then echo -n ""; elif [[ "$dir" == "/" ]]; then echo -n "/"; else echo -n "$dir/"; fi)
   dir=$(basename "$pwd" 2>/dev/null)
   suffix=$(if [[ "$dir" == "/" ]]; then echo -n ""; else echo -n "$dir"; fi)
-  printf "%s%s%s%s%s" "${COLOR_DARK}" "${prefix/#\~/${COLOR_LIGHT}~${COLOR_DARK}}" "${COLOR_LIGHT}" "${suffix}" "${COLOR_RESET}"
+
+  # combine results
+  printf "%s" "${COLOR_DARK}${prefix/#\~/${COLOR_LIGHT}~${COLOR_DARK}}${COLOR_LIGHT}${suffix}${COLOR_RESET}"
+}
+
+__gp_prompt() {
+
+  # preferences
+  local COLOR_PROMPT=$(__gp_color "${GP_COLOR_PROMPT:-38;5;49}")
+  local COLOR_RESET=$(__gp_color 0)
+  local PROMPT_SYMBOL=${GP_PROMPT_SYMBOL-"❯"}
+
+  # combine results
+  printf "%s" "${COLOR_PROMPT}${PROMPT_SYMBOL}${COLOR_RESET}"
 }
 
 export TERM=xterm-256color
 
 if [ -n "$ZSH_VERSION" ]; then
   setopt PROMPT_SUBST
-  export PROMPT="%\$((\$COLUMNS / 2))<…<\$(__gp_pwd)\$(__gp_status)\$(__gp_color \${GP_COLOR_PROMPT:-38;5;49}) ❯$(__gp_color 0) "
+  export PROMPT="\$(__gp_status)%\$((\$COLUMNS / 2))<…<\$(__gp_pwd) \$(__gp_prompt) "
 else
-  export PS1="\$(__gp_pwd)\$(__gp_status)\$(__gp_color \${GP_COLOR_PROMPT:-38;5;49}) ❯$(__gp_color 0) "
+  export PS1="\$(__gp_status)\$(__gp_pwd) \$(__gp_prompt) "
 fi
