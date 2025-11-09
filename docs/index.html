@@ -103,7 +103,7 @@ __gp_status() {
   )
 
   # parse repository name
-  repository=$(git remote get-url origin | sed 's/.*\///' | sed 's/\.git$//')
+  repository=$(git remote get-url origin 2>/dev/null | sed 's/.*\///' | sed 's/\.git$//')
   repository=${repository:-$(git rev-parse --show-toplevel | xargs basename)}
 
   # parse user.name
