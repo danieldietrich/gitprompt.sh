@@ -122,10 +122,6 @@ __gp_status() {
 
 __gp_pwd() {
 
-  if git rev-parse --is-inside-work-tree &>/dev/null; then
-    return 0
-  fi
-
   # preferences
   local COLOR_DARK=$(__gp_color "${GP_COLOR_PWD_DARK:-1;38;5;24}")
   local COLOR_LIGHT=$(__gp_color "${GP_COLOR_PWD_LIGHT:-1;38;5;39}")
@@ -142,7 +138,7 @@ __gp_pwd() {
   suffix=$(if [[ "$dir" == "/" ]]; then echo -n ""; else echo -n "$dir"; fi)
 
   # combine results
-  printf "%s %s" "${COLOR_DARK}${prefix/#\~/${COLOR_LIGHT}~${COLOR_DARK}}${COLOR_LIGHT}${suffix}" "${COLOR_RESET}"
+  printf "%s" "${COLOR_DARK}${prefix/#\~/${COLOR_LIGHT}~${COLOR_DARK}}${COLOR_LIGHT}${suffix}${COLOR_RESET}"
 }
 
 __gp_prompt() {
@@ -160,7 +156,7 @@ export TERM=xterm-256color
 
 if [ -n "$ZSH_VERSION" ]; then
   setopt PROMPT_SUBST
-  export PROMPT="\$(__gp_status)%\$((\$COLUMNS / 2))<…<\$(__gp_pwd)\$(__gp_prompt) "
+  export PROMPT="\$(__gp_status)%\$((\$COLUMNS / 2))<…<\$(__gp_pwd) \$(__gp_prompt) "
 else
-  export PS1="\$(__gp_status)\$(__gp_pwd)\$(__gp_prompt) "
+  export PS1="\$(__gp_status)\$(__gp_pwd) \$(__gp_prompt) "
 fi
