@@ -88,8 +88,8 @@ __gp_status() {
 
   # parse branch
   branch=$(__parse "s/^## (HEAD \(no branch\))$/\1/p")
-  branch=${branch:-$(__parse "s/^## No commits yet on (.*)$/\1/p")}
-  branch=${branch:-$(__parse "s/^## (.*)[\.]{3}[^ ]*.*$/\1/p")} # branch...remote
+  branch=${branch:-$(__parse "s/^## No commits yet on ([^\.]*).*$/\1/p")}
+  branch=${branch:-$(__parse "s/^## ([^\.]*)[\.]{3}.*$/\1/p")} # branch...remote
   branch=${branch:-$(__parse "s/^## (.*)[^ ]*.*$/\1/p")} # branch
 
   # parse push state
